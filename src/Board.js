@@ -28,6 +28,8 @@ const createTargets = () => {
 };
 
 const createBoxes = () => Array(9).fill('hidden');
+const TREASURE_SPARKS = Array.from({ length: 12 }, (_, index) => index);
+const PAW_TRAILS = Array.from({ length: 5 }, (_, index) => index);
 
 class Board extends Component {
   constructor(props) {
@@ -143,9 +145,10 @@ class Board extends Component {
     if (gameStatus === 'won') {
       return {
         tone: 'won',
+        mode: 'cat',
         icon: '😸',
         title: 'You found the cat!',
-        text: 'The treasure box pops open and the cat celebrates with you.',
+        text: 'The treasure chest bursts open and the cat jumps into the spotlight.',
       };
     }
 
@@ -153,8 +156,9 @@ class Board extends Component {
 
     return {
       tone: 'lost',
+      mode: dogFoundYou ? 'dog' : 'hidden',
       icon: dogFoundYou ? '🐕' : '😿',
-      title: dogFoundYou ? 'The dog found you!' : 'The cat stayed hidden.',
+      title: dogFoundYou ? 'The dog found you!' : 'The cat slipped away.',
       text: message,
     };
   };
@@ -168,22 +172,27 @@ class Board extends Component {
 
     return (
       <section
-        className={`result-scene result-scene--${details.tone}`}
+        className={`result-scene result-scene--${details.tone} result-scene--${details.mode}`}
         aria-live="polite"
         aria-label={details.title}
       >
-        <div className="result-motion" aria-hidden="true">
-          <span className="spark spark--one" />
-          <span className="spark spark--two" />
-          <span className="spark spark--three" />
-          <span className="trail trail--one">•</span>
-          <span className="trail trail--two">•</span>
-          <span className="trail trail--three">•</span>
-        </div>
-        <div className="result-icon" aria-hidden="true">
-          {details.icon}
+        <div className="treasure-stage" aria-hidden="true">
+          <span className="stage-glow" />
+          <div className="treasure-box">
+            <span className="treasure-lid" />
+            <span className="treasure-base" />
+            <span className="treasure-lock" />
+          </div>
+          <div className="result-character">{details.icon}</div>
+          {TREASURE_SPARKS.map((spark) => (
+            <span key={`spark-${spark}`} className={`treasure-spark treasure-spark--${spark + 1}`} />
+          ))}
+          {PAW_TRAILS.map((trail) => (
+            <span key={`trail-${trail}`} className={`paw-trail paw-trail--${trail + 1}`} />
+          ))}
         </div>
         <div className="result-message">
+          <span className="result-kicker">{details.tone === 'won' ? 'Treasure found' : 'Hunt ended'}</span>
           <h2>{details.title}</h2>
           <p>{details.text}</p>
         </div>
