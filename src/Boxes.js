@@ -1,22 +1,31 @@
-import React, {Component} from 'react';
+import React from 'react';
 
-class Boxes extends Component{
-    constructor(props){
-        super()
-    }
+const contentByValue = {
+  hidden: 'Gift',
+  empty: 'X',
+  cat: 'Cat',
+  dog: 'Dog',
+};
 
-    handleClick = (index) => {
-        this.props.boxLocation(this.props.index)
-        this.props.checkCounter(this.props.counter)
-    }
+const visualByValue = {
+  hidden: '🎁',
+  empty: 'X',
+  cat: '😸',
+  dog: '🐕',
+};
 
-    render(){
-        return(
-            <div>
-            <button class = "Boxes" onClick = {this.handleClick}> {this.props.value} </button>
-            </div>
-        )
-    }
+function Boxes({ boxLocation, index, isDisabled, value }) {
+  return (
+    <button
+      type="button"
+      className={`box box--${value}`}
+      onClick={() => boxLocation(index)}
+      disabled={isDisabled}
+      aria-label={`Box ${index + 1}: ${contentByValue[value]}`}
+    >
+      {visualByValue[value]}
+    </button>
+  );
 }
 
 export default Boxes;

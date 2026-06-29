@@ -1,117 +1,203 @@
-import React, {Component} from 'react';
-import Boxes from './Boxes.js'
+import React, { Component } from 'react';
+import Boxes from './Boxes.js';
 
-class Board extends Component{
-    constructor(props){
-        super(props)
-            this.state={
-                boxes:[ "🎁", "🎁", "🎁", "🎁", "🎁", "🎁", "🎁", "🎁", "🎁"],
-                checked: false,
-                winningBox: null,
-                losingBox: null,
-                counters: 6,
-                gameWinning: false,
-                gameLosing: false
-        }
+const DIFFICULTIES = {
+  easy: {
+    label: 'Easy',
+    attempts: 7,
+  },
+  normal: {
+    label: 'Normal',
+    attempts: 5,
+  },
+  hard: {
+    label: 'Hard',
+    attempts: 4,
+  },
+};
+
+const createTargets = () => {
+  const catIndex = Math.floor(Math.random() * 9);
+  let dogIndex = Math.floor(Math.random() * 9);
+
+  while (dogIndex === catIndex) {
+    dogIndex = Math.floor(Math.random() * 9);
+  }
+
+  return { catIndex, dogIndex };
+};
+
+const createBoxes = () => Array(9).fill('hidden');
+
+class Board extends Component {
+  constructor(props) {
+    super(props);
+    const targets = createTargets();
+
+    this.state = {
+      boxes: createBoxes(),
+      difficulty: 'normal',
+      attemptsLeft: DIFFICULTIES.normal.attempts,
+      gameStatus: 'playing',
+      message: 'Pick a box. The closer you get, the warmer the hint.',
+      wins: 0,
+      losses: 0,
+      ...targets,
+    };
+  }
+
+  getDistance = (index) => {
+    const { catIndex } = this.state;
+    const row = Math.floor(index / 3);
+    const col = index % 3;
+    const catRow = Math.floor(catIndex / 3);
+    const catCol = catIndex % 3;
+
+    return Math.abs(row - catRow) + Math.abs(col - catCol);
+  };
+
+  getHint = (index) => {
+    const distance = this.getDistance(index);
+
+    if (distance === 1) {
+      return 'Very warm. The cat is next door.';
     }
 
-    componentDidMount = () => {
-        const {boxes} = this.state
-        let winner = Math.floor(Math.random()*boxes.length)
-        let loser = Math.floor(Math.random()*boxes.length)
-        if (winner === loser){
-            loser = Math.floor(Math.random()*boxes.length)
-        }
-        this.setState ({winningBox: winner, losingBox: loser})
-        console.log(winner, loser)
+    if (distance === 2) {
+      return 'Warm. You are getting close.';
     }
 
-    boxLocation = (index) =>{
-        const {winningBox, losingBox, boxes} = this.state
+    return 'Cold. Try another side of the board.';
+  };
 
-        if( index === winningBox){
-            boxes[index] = "😸"
-            this.setState({
-                boxes: boxes,
-                gameWinning: true
-            })
-            window.setTimeout(function(){window.location.reload()}, 200);
-            window.setTimeout(function(){alert("You found it!")}, 200);
+  restartGame = (difficulty = this.state.difficulty) => {
+    const targets = createTargets();
 
-        } else if (index === losingBox){
-            boxes[index] = "🐕"
-            this.setState ({
-                boxes : boxes,
-                gameLosing: true
-            })
-            window.setTimeout(function(){window.location.reload()}, 200);
-            window.setTimeout(function(){alert("You got chased!")}, 200);
-        } else {
-            boxes[index] = "X"
-            this.setState({
-                boxes : boxes
-            })
-        }
-    }
+    this.setState({
+      boxes: createBoxes(),
+      difficulty,
+      attemptsLeft: DIFFICULTIES[difficulty].attempts,
+      gameStatus: 'playing',
+      message: 'Pick a box. The closer you get, the warmer the hint.',
+      ...targets,
+    });
+  };
 
-    checkCounter = () => {
-        let newCount = this.state.counters- 1
-        if (newCount < 0){
-            this.setState ({
-                gameOver: true
-            })
-            alert("You failed!")
-            window.setTimeout(function(){window.location.reload()}, 200);
-        } else {
-            this.setState({counters: newCount})
-        }
-    }
+  boxLocation = (index) => {
+    this.setState((prevState) => {
+      if (prevState.gameStatus !== 'playing' || prevState.boxes[index] !== 'hidden') {
+        return null;
+      }
 
+      const boxes = prevState.boxes.slice();
 
-    restartGame = () => {
-        window.location.reload();
-    }
+      if (index === prevState.catIndex) {
+        boxes[index] = 'cat';
+        return {
+          boxes,
+          gameStatus: 'won',
+          message: 'You found the cat!',
+          wins: prevState.wins + 1,
+        };
+      }
 
+      if (index === prevState.dogIndex) {
+        boxes[index] = 'dog';
+        return {
+          boxes,
+          gameStatus: 'lost',
+          message: 'The dog found you first.',
+          losses: prevState.losses + 1,
+        };
+      }
 
-    render(){
-      // eslint-disable-next-line
-        let {boxes, winningBox} = this.state
-        let square = boxes.map((value, index)=> {
-            return (
-                <Boxes
-                value = {value}
-                index = {index}
-                key = {index}
-                boxLocation = {this.boxLocation}
-                checkCounter = {this.checkCounter}
-                />
-            )
-        })
+      boxes[index] = 'empty';
+      const attemptsLeft = prevState.attemptsLeft - 1;
 
-        return(
-            <div id= "container">
-            <h2> Find your cat! </h2>
-            <h3> Don't get chased by the dog! </h3>
-            <br />
-                {!this.state.gameWinning&& !this.state.gameLosing &&
-                    <div id="gamebox">
-                    {square}
-                </div>}
-                {this.state.gameWinning&&
-                    <div id="gameOn">
-                    <img id="dogWin" src="https://i.pinimg.com/originals/25/ea/64/25ea6471cfdc1d807ff46752cbc53598.gif"  alt="GIF"/>
-                </div>}
-                {this.state.gameLosing &&
-                    <div id="gameOff">
-                    <img id="dogLose" src="https://i.makeagif.com/media/3-03-2014/dDpSe0.gif" alt="GIF" />
-                </div>}
-            <h1>Boxes Left : {this.state.counters}</h1>
-            <button onClick = {this.restartGame}> Restart Game </button>
+      if (attemptsLeft <= 0) {
+        boxes[prevState.catIndex] = 'cat';
+        return {
+          boxes,
+          attemptsLeft: 0,
+          gameStatus: 'lost',
+          message: 'No boxes left. The cat was hiding here.',
+          losses: prevState.losses + 1,
+        };
+      }
+
+      return {
+        boxes,
+        attemptsLeft,
+        message: this.getHint(index),
+      };
+    });
+  };
+
+  render() {
+    const { attemptsLeft, boxes, difficulty, gameStatus, losses, message, wins } = this.state;
+
+    return (
+      <main className="hunt-shell">
+        <section className="hunt-card" aria-labelledby="hunt-title">
+          <div className="hunt-header">
+            <div>
+              <p className="eyebrow">Tiny treasure game</p>
+              <h1 id="hunt-title">Find Your Cat</h1>
             </div>
+            <div className={`status-card status-card--${gameStatus}`} aria-live="polite">
+              {message}
+            </div>
+          </div>
 
-        )
-    }
+          <div className="stats-bar" aria-label="Game stats">
+            <div>
+              <span>Boxes left</span>
+              <strong>{attemptsLeft}</strong>
+            </div>
+            <div>
+              <span>Wins</span>
+              <strong>{wins}</strong>
+            </div>
+            <div>
+              <span>Losses</span>
+              <strong>{losses}</strong>
+            </div>
+          </div>
+
+          <div className="difficulty-bar" aria-label="Difficulty">
+            {Object.keys(DIFFICULTIES).map((key) => (
+              <button
+                type="button"
+                key={key}
+                className={difficulty === key ? 'is-active' : ''}
+                onClick={() => this.restartGame(key)}
+              >
+                {DIFFICULTIES[key].label}
+              </button>
+            ))}
+          </div>
+
+          <div className="gamebox" role="grid" aria-label="Treasure boxes">
+            {boxes.map((value, index) => (
+              <Boxes
+                key={index}
+                value={value}
+                index={index}
+                isDisabled={gameStatus !== 'playing' || value !== 'hidden'}
+                boxLocation={this.boxLocation}
+              />
+            ))}
+          </div>
+
+          <div className="controls">
+            <button type="button" className="primary-button" onClick={() => this.restartGame()}>
+              New game
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
 }
-
 
 export default Board;
