@@ -133,6 +133,64 @@ class Board extends Component {
     });
   };
 
+  getResultDetails = () => {
+    const { gameStatus, message } = this.state;
+
+    if (gameStatus === 'playing') {
+      return null;
+    }
+
+    if (gameStatus === 'won') {
+      return {
+        tone: 'won',
+        icon: '😸',
+        title: 'You found the cat!',
+        text: 'The treasure box pops open and the cat celebrates with you.',
+      };
+    }
+
+    const dogFoundYou = message.toLowerCase().includes('dog');
+
+    return {
+      tone: 'lost',
+      icon: dogFoundYou ? '🐕' : '😿',
+      title: dogFoundYou ? 'The dog found you!' : 'The cat stayed hidden.',
+      text: message,
+    };
+  };
+
+  renderResultAnimation = () => {
+    const details = this.getResultDetails();
+
+    if (!details) {
+      return null;
+    }
+
+    return (
+      <section
+        className={`result-scene result-scene--${details.tone}`}
+        aria-live="polite"
+        aria-label={details.title}
+      >
+        <div className="result-motion" aria-hidden="true">
+          <span className="spark spark--one" />
+          <span className="spark spark--two" />
+          <span className="spark spark--three" />
+          <span className="trail trail--one">•</span>
+          <span className="trail trail--two">•</span>
+          <span className="trail trail--three">•</span>
+        </div>
+        <div className="result-icon" aria-hidden="true">
+          {details.icon}
+        </div>
+        <div className="result-message">
+          <h2>{details.title}</h2>
+          <p>{details.text}</p>
+        </div>
+      </section>
+    );
+  };
+
   render() {
     const { attemptsLeft, boxes, difficulty, gameStatus, losses, message, wins } = this.state;
 
@@ -188,6 +246,8 @@ class Board extends Component {
               />
             ))}
           </div>
+
+          {this.renderResultAnimation()}
 
           <div className="controls">
             <button type="button" className="primary-button" onClick={() => this.restartGame()}>
